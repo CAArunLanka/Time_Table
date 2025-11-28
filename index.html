@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Progress Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+</head>
+<body>
+
+    <div id="overlay" class="hidden"></div>
+
+    <header>
+        <div class="header-top">
+            <h1>📚 Study Tracker</h1>
+            <div class="controls">
+                <button id="theme-toggle" title="Toggle Dark Mode">🌙</button>
+                <button id="reset-all" title="Reset All Data">🗑️</button>
+            </div>
+        </div>
+        
+        <div class="overall-stats">
+            <div class="stat-box">
+                <span id="total-tasks">0</span>
+                <p>Tasks Created</p>
+            </div>
+            <div class="stat-box">
+                <span id="total-completed">0</span>
+                <p>Tasks Done</p>
+            </div>
+            <div class="stat-box">
+                <span id="overall-percent">0%</span>
+                <p>Overall Progress</p>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <button id="prev-month">❮</button>
+                <h2 id="month-year">Month Year</h2>
+                <button id="next-month">❯</button>
+            </div>
+            <div class="weekdays">
+                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div class="days" id="calendar-grid">
+                </div>
+        </div>
+    </main>
+
+    <div id="task-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2 id="modal-date-title">Date</h2>
+            <button id="close-modal">✖</button>
+        </div>
+        
+        <div class="progress-section">
+            <div class="progress-bar-bg">
+                <div id="daily-progress-bar" style="width: 0%;"></div>
+            </div>
+            <p id="daily-stats-text">0/0 Completed (0%)</p>
+        </div>
+
+        <div class="task-input-area">
+            <input type="text" id="new-task-input" placeholder="Add a new task..." maxlength="50">
+            <button id="add-task-btn">＋</button>
+        </div>
+
+        <ul id="task-list">
+            </ul>
+
+        <div class="modal-actions">
+            <button id="copy-tasks-btn" class="secondary-btn">📋 Copy Tasks</button>
+            <button id="paste-tasks-btn" class="secondary-btn hidden">📥 Paste</button>
+        </div>
+    </div>
+
+    <div id="welcome-modal" class="modal hidden">
+        <h2>Welcome to Study Tracker! 🚀</h2>
+        <p>Stay consistent and track your daily study goals.</p>
+        <ul>
+            <li>📅 Click a date to add tasks.</li>
+            <li>✅ Tick tasks to track progress.</li>
+            <li>🎨 Green = Done, Yellow = In Progress, Red = Pending.</li>
+            <li>🌙 Dark mode supported!</li>
+        </ul>
+        <button id="start-tracking-btn" class="primary-btn">Get Started</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
