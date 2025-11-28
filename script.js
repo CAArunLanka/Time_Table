@@ -1,10 +1,13 @@
 // --- Global State ---
 let currentDate = new Date();
 let selectedDateKey = null;
-let tasksData = JSON.parse(localStorage.getItem('studyTasks')) || {};
-let copiedTasks = null; // Clipboard for tasks
+let currentUser = null; // Store logged-in username
+let tasksData = {};     // Holds current user's data
+let copiedTasks = null;
 
-// --- Selectors ---
+// --- DOM Elements ---
+const authContainer = document.getElementById('auth-container');
+const appContainer = document.getElementById('app-container');
 const calendarGrid = document.getElementById('calendar-grid');
 const monthYearLabel = document.getElementById('month-year');
 const taskModal = document.getElementById('task-modal');
@@ -14,54 +17,125 @@ const newTaskInput = document.getElementById('new-task-input');
 const modalDateTitle = document.getElementById('modal-date-title');
 const progressBar = document.getElementById('daily-progress-bar');
 const progressText = document.getElementById('daily-stats-text');
-const pasteBtn = document.getElementById('paste-tasks-btn');
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
-    renderCalendar();
-    updateOverallStats();
-    checkWelcome();
-    applyTheme();
+    checkSession();
 });
 
-// --- Calendar Logic ---
+// --- Authentication Logic ---
+
+// Toggle between Login and Register forms
+document.getElementById('show-register').addEventListener('click', () => {
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('register-form').classList.remove('hidden');
+    document.getElementById('auth-msg').innerText = "";
+});
+
+document.getElementById('show-login').addEventListener('click', () => {
+    document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('login-form').classList.remove('hidden');
+    document.getElementById('auth-msg').innerText = "";
+});
+
+// Register
+document.getElementById('reg-btn').addEventListener('click', () => {
+    const user = document.getElementById('reg-user').value.trim();
+    const pass = document.getElementById('reg-pass').value.trim();
+    const msg = document.getElementById('auth-msg');
+
+    if(!user || !pass) { msg.innerText = "Please fill all fields."; return; }
+
+    let usersDB = JSON.parse(localStorage.getItem('studyUsers')) || {};
+
+    if(usersDB[user]) {
+        msg.innerText = "Username already taken!";
+    } else {
+        usersDB[user] = { password: pass }; // Simple storage
+        localStorage.setItem('studyUsers', JSON.stringify(usersDB));
+        alert("Account created! Please log in.");
+        document.getElementById('show-login').click();
+    }
+});
+
+// Login
+document.getElementById('login-btn').addEventListener('click', () => {
+    const user = document.getElementById('login-user').value.trim();
+    const pass = document.getElementById('login-pass').value.trim();
+    const msg = document.getElementById('auth-msg');
+
+    let usersDB = JSON.parse(localStorage.getItem('studyUsers')) || {};
+
+    if(usersDB[user] && usersDB[user].password === pass) {
+        loginUser(user);
+    } else {
+        msg.innerText = "Invalid username or password.";
+    }
+});
+
+function loginUser(username) {
+    currentUser = username;
+    // Load User Specific Data
+    tasksData = JSON.parse(localStorage.getItem(`tasks_${currentUser}`)) || {};
+    
+    // UI Transitions
+    authContainer.classList.add('hidden');
+    appContainer.classList.remove('hidden');
+    document.getElementById('user-welcome').innerText = `👋 Hi, ${username}`;
+    
+    // Init App
+    renderCalendar();
+    updateOverallStats();
+}
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+    currentUser = null;
+    tasksData = {};
+    appContainer.classList.add('hidden');
+    authContainer.classList.remove('hidden');
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-pass').value = '';
+});
+
+function checkSession() {
+    // Optional: Keep user logged in on refresh (Currently disabled for security demo)
+    // To enable, save currentUser to localStorage on login and check here.
+}
+
+// --- App Logic (Same as before but uses currentUser keys) ---
+
+function saveData() {
+    if(!currentUser) return;
+    localStorage.setItem(`tasks_${currentUser}`, JSON.stringify(tasksData));
+}
+
 function renderCalendar() {
     calendarGrid.innerHTML = '';
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    
-    // Set Month Header
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     monthYearLabel.innerText = `${months[month]} ${year}`;
 
-    // Get First Day & Total Days
     const firstDayIndex = new Date(year, month, 1).getDay();
     const lastDay = new Date(year, month + 1, 0).getDate();
 
-    // Previous Month Fillers
     for (let i = 0; i < firstDayIndex; i++) {
-        const div = document.createElement('div');
-        div.classList.add('day', 'empty');
-        calendarGrid.appendChild(div);
+        calendarGrid.appendChild(document.createElement('div'));
     }
 
-    // Days Generation
+    const today = new Date();
+
     for (let i = 1; i <= lastDay; i++) {
         const dayDiv = document.createElement('div');
         dayDiv.innerText = i;
         dayDiv.classList.add('day');
         
-        // Date Key: YYYY-MM-DD (Manual formatting to avoid timezone issues)
         const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-        dayDiv.dataset.date = dateKey;
-
-        // Check for Today
-        const today = new Date();
+        
         if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
             dayDiv.classList.add('today');
         }
 
-        // Status Colors
         if (tasksData[dateKey] && tasksData[dateKey].length > 0) {
             const tasks = tasksData[dateKey];
             const completed = tasks.filter(t => t.completed).length;
@@ -80,23 +154,17 @@ document.getElementById('prev-month').addEventListener('click', () => {
     currentDate.setMonth(currentDate.getMonth() - 1);
     renderCalendar();
 });
-
 document.getElementById('next-month').addEventListener('click', () => {
     currentDate.setMonth(currentDate.getMonth() + 1);
     renderCalendar();
 });
 
-// --- Task Manager Logic ---
+// --- Modal & Tasks ---
 function openTaskModal(dateKey) {
     selectedDateKey = dateKey;
-    const dateObj = new Date(dateKey);
-    modalDateTitle.innerText = dateObj.toDateString();
-    
+    modalDateTitle.innerText = new Date(dateKey).toDateString();
     renderTasks();
-    
-    // Show copy/paste logic
-    pasteBtn.classList.toggle('hidden', !copiedTasks);
-
+    document.getElementById('paste-tasks-btn').classList.toggle('hidden', !copiedTasks);
     taskModal.classList.remove('hidden');
     overlay.classList.remove('hidden');
 }
@@ -112,12 +180,11 @@ function renderTasks() {
 
         li.innerHTML = `
             <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${index})">
-            <span onclick="toggleTask(${index})">${task.text}</span>
-            <button class="delete-btn" onclick="deleteTask(${index})">🗑️</button>
+            <span>${task.text}</span>
+            <button class="delete-btn" onclick="deleteTask(${index})" style="background:none;border:none;cursor:pointer;">❌</button>
         `;
         taskList.appendChild(li);
     });
-
     updateDailyStats(tasks);
 }
 
@@ -127,18 +194,16 @@ newTaskInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') addTask
 function addTask() {
     const text = newTaskInput.value.trim();
     if (!text) return;
-
     if (!tasksData[selectedDateKey]) tasksData[selectedDateKey] = [];
     tasksData[selectedDateKey].push({ text, completed: false });
-    
     saveData();
     renderTasks();
-    renderCalendar(); // Update grid colors
+    renderCalendar();
     updateOverallStats();
     newTaskInput.value = '';
 }
 
-function toggleTask(index) {
+window.toggleTask = function(index) {
     tasksData[selectedDateKey][index].completed = !tasksData[selectedDateKey][index].completed;
     saveData();
     renderTasks();
@@ -148,114 +213,69 @@ function toggleTask(index) {
 
 window.deleteTask = function(index) {
     tasksData[selectedDateKey].splice(index, 1);
-    // Cleanup if empty
     if (tasksData[selectedDateKey].length === 0) delete tasksData[selectedDateKey];
-    
     saveData();
     renderTasks();
     renderCalendar();
     updateOverallStats();
-};
+}
 
 function updateDailyStats(tasks) {
     const total = tasks.length;
     const completed = tasks.filter(t => t.completed).length;
     const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
-
     progressBar.style.width = `${percent}%`;
-    progressText.innerText = `${completed}/${total} Completed (${percent}%)`;
+    progressText.innerText = `${completed}/${total} Done`;
 }
 
-// --- Copy / Paste Feature ---
-document.getElementById('copy-tasks-btn').addEventListener('click', () => {
-    if (tasksData[selectedDateKey]) {
-        copiedTasks = JSON.parse(JSON.stringify(tasksData[selectedDateKey])); // Deep copy
-        // Reset completion status for copied tasks
-        copiedTasks.forEach(t => t.completed = false);
-        alert('Tasks copied! Open another date to paste.');
-        closeModal();
-    } else {
-        alert('No tasks to copy.');
-    }
-});
-
-pasteBtn.addEventListener('click', () => {
-    if (!copiedTasks) return;
-    if (!tasksData[selectedDateKey]) tasksData[selectedDateKey] = [];
-    
-    // Merge tasks
-    tasksData[selectedDateKey] = [...tasksData[selectedDateKey], ...copiedTasks];
-    saveData();
-    renderTasks();
-    renderCalendar();
-    updateOverallStats();
-    alert('Tasks pasted successfully!');
-});
-
-// --- Modal Utilities ---
+// --- Utils ---
 document.getElementById('close-modal').addEventListener('click', closeModal);
-overlay.addEventListener('click', () => {
-    closeModal();
-    document.getElementById('welcome-modal').classList.add('hidden');
-});
-
+overlay.addEventListener('click', closeModal);
 function closeModal() {
     taskModal.classList.add('hidden');
     overlay.classList.add('hidden');
 }
 
-// --- Persistence & Stats ---
-function saveData() {
-    localStorage.setItem('studyTasks', JSON.stringify(tasksData));
-}
+document.getElementById('copy-tasks-btn').addEventListener('click', () => {
+    if (tasksData[selectedDateKey]) {
+        copiedTasks = JSON.parse(JSON.stringify(tasksData[selectedDateKey]));
+        copiedTasks.forEach(t => t.completed = false);
+        alert('Copied!');
+    }
+});
+
+document.getElementById('paste-tasks-btn').addEventListener('click', () => {
+    if (!copiedTasks) return;
+    if (!tasksData[selectedDateKey]) tasksData[selectedDateKey] = [];
+    tasksData[selectedDateKey] = [...tasksData[selectedDateKey], ...copiedTasks];
+    saveData();
+    renderTasks();
+    renderCalendar();
+    updateOverallStats();
+});
+
+document.getElementById('reset-day-btn').addEventListener('click', () => {
+    delete tasksData[selectedDateKey];
+    saveData();
+    renderTasks();
+    renderCalendar();
+    updateOverallStats();
+});
 
 function updateOverallStats() {
-    let totalTasks = 0;
-    let totalCompleted = 0;
-
+    let totalTasks = 0, totalCompleted = 0;
     Object.values(tasksData).forEach(dayTasks => {
         totalTasks += dayTasks.length;
         totalCompleted += dayTasks.filter(t => t.completed).length;
     });
-
     const percent = totalTasks === 0 ? 0 : Math.round((totalCompleted / totalTasks) * 100);
-
     document.getElementById('total-tasks').innerText = totalTasks;
     document.getElementById('total-completed').innerText = totalCompleted;
     document.getElementById('overall-percent').innerText = `${percent}%`;
 }
 
-document.getElementById('reset-all').addEventListener('click', () => {
-    if(confirm('Are you sure you want to delete ALL data? This cannot be undone.')) {
-        localStorage.removeItem('studyTasks');
-        tasksData = {};
-        renderCalendar();
-        updateOverallStats();
-    }
-});
-
-// --- Theme & Welcome ---
-const themeToggle = document.getElementById('theme-toggle');
-themeToggle.addEventListener('click', () => {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    localStorage.setItem('theme', isDark ? 'light' : 'dark');
-});
-
-function applyTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
-}
-
-function checkWelcome() {
-    if (!localStorage.getItem('welcomeShown')) {
-        document.getElementById('welcome-modal').classList.remove('hidden');
-        overlay.classList.remove('hidden');
-    }
-}
-
-document.getElementById('start-tracking-btn').addEventListener('click', () => {
-    localStorage.setItem('welcomeShown', 'true');
-    document.getElementById('welcome-modal').classList.add('hidden');
-    overlay.classList.add('hidden');
+// Theme Toggle
+document.getElementById('theme-toggle').addEventListener('click', () => {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    document.documentElement.setAttribute('data-theme', isLight ? 'dark' : 'light');
 });
