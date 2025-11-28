@@ -3,55 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Progress Tracker</title>
+    <title>StudyHub</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
 </head>
 <body>
 
-    <div id="overlay" class="hidden"></div>
+    <div class="background-animation"></div>
 
-    <header>
-        <div class="header-top">
-            <h1>📚 Study Tracker</h1>
-            <div class="controls">
-                <button id="theme-toggle" title="Toggle Dark Mode">🌙</button>
-                <button id="reset-all" title="Reset All Data">🗑️</button>
+    <div id="auth-container" class="auth-container">
+        <div class="glass-card auth-card">
+            <h1>🚀 StudyHub</h1>
+            <p>Track your progress, smash your goals.</p>
+            
+            <div id="login-form">
+                <input type="text" id="login-user" placeholder="Username">
+                <input type="password" id="login-pass" placeholder="Password">
+                <button id="login-btn" class="primary-btn glow">Log In</button>
+                <p class="switch-text">New here? <span id="show-register">Create Account</span></p>
             </div>
+
+            <div id="register-form" class="hidden">
+                <input type="text" id="reg-user" placeholder="Choose Username">
+                <input type="password" id="reg-pass" placeholder="Choose Password">
+                <button id="reg-btn" class="success-btn glow">Sign Up</button>
+                <p class="switch-text">Have an account? <span id="show-login">Log In</span></p>
+            </div>
+            <p id="auth-msg" class="error-msg"></p>
         </div>
+    </div>
+
+    <div id="app-container" class="hidden fade-in">
         
-        <div class="overall-stats">
-            <div class="stat-box">
-                <span id="total-tasks">0</span>
-                <p>Tasks Created</p>
-            </div>
-            <div class="stat-box">
-                <span id="total-completed">0</span>
-                <p>Tasks Done</p>
-            </div>
-            <div class="stat-box">
-                <span id="overall-percent">0%</span>
-                <p>Overall Progress</p>
-            </div>
-        </div>
-    </header>
-
-    <main>
-        <div class="calendar-container">
-            <div class="calendar-header">
-                <button id="prev-month">❮</button>
-                <h2 id="month-year">Month Year</h2>
-                <button id="next-month">❯</button>
-            </div>
-            <div class="weekdays">
-                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-            </div>
-            <div class="days" id="calendar-grid">
+        <header>
+            <div class="header-top">
+                <h1 id="user-welcome">👋 Hello, User</h1>
+                <div class="controls">
+                    <button id="theme-toggle" title="Toggle Theme">🌙</button>
+                    <button id="logout-btn" title="Log Out">🚪</button>
                 </div>
-        </div>
-    </main>
+            </div>
+            
+            <div class="glass-card stats-container">
+                <div class="stat-box">
+                    <span id="total-tasks">0</span>
+                    <p>Created</p>
+                </div>
+                <div class="stat-box">
+                    <span id="total-completed">0</span>
+                    <p>Done</p>
+                </div>
+                <div class="stat-box">
+                    <div class="circular-progress" id="progress-circle">
+                        <span id="overall-percent">0%</span>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-    <div id="task-modal" class="modal hidden">
+        <main>
+            <div class="glass-card calendar-container">
+                <div class="calendar-header">
+                    <button id="prev-month">❮</button>
+                    <h2 id="month-year">Month Year</h2>
+                    <button id="next-month">❯</button>
+                </div>
+                <div class="weekdays">
+                    <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                </div>
+                <div class="days" id="calendar-grid"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="overlay" class="hidden"></div>
+    <div id="task-modal" class="glass-card modal hidden">
         <div class="modal-header">
             <h2 id="modal-date-title">Date</h2>
             <button id="close-modal">✖</button>
@@ -61,33 +88,21 @@
             <div class="progress-bar-bg">
                 <div id="daily-progress-bar" style="width: 0%;"></div>
             </div>
-            <p id="daily-stats-text">0/0 Completed (0%)</p>
+            <p id="daily-stats-text">0/0 Done</p>
         </div>
 
         <div class="task-input-area">
-            <input type="text" id="new-task-input" placeholder="Add a new task..." maxlength="50">
+            <input type="text" id="new-task-input" placeholder="New task..." maxlength="40">
             <button id="add-task-btn">＋</button>
         </div>
 
-        <ul id="task-list">
-            </ul>
+        <ul id="task-list"></ul>
 
         <div class="modal-actions">
-            <button id="copy-tasks-btn" class="secondary-btn">📋 Copy Tasks</button>
-            <button id="paste-tasks-btn" class="secondary-btn hidden">📥 Paste</button>
+            <button id="copy-tasks-btn" class="secondary-btn">Copy</button>
+            <button id="paste-tasks-btn" class="secondary-btn hidden">Paste</button>
+            <button id="reset-day-btn" class="danger-btn">Clear Day</button>
         </div>
-    </div>
-
-    <div id="welcome-modal" class="modal hidden">
-        <h2>Welcome to Study Tracker! 🚀</h2>
-        <p>Stay consistent and track your daily study goals.</p>
-        <ul>
-            <li>📅 Click a date to add tasks.</li>
-            <li>✅ Tick tasks to track progress.</li>
-            <li>🎨 Green = Done, Yellow = In Progress, Red = Pending.</li>
-            <li>🌙 Dark mode supported!</li>
-        </ul>
-        <button id="start-tracking-btn" class="primary-btn">Get Started</button>
     </div>
 
     <script src="script.js"></script>
